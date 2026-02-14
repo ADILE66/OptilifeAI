@@ -1,6 +1,8 @@
-import React, { createContext, useState, useEffect } from 'react';
+import * as React from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '../types';
 import * as authService from '../services/authService';
+import { supabase } from '../lib/supabase';
 
 export const AuthContext = createContext<AuthContextType>(null!);
 
@@ -13,18 +15,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        authService.initMockDatabase();
-        const user = authService.getCurrentUser();
-        if (user) {
+        // Initial check
+        const initAuth = async () => {
+            const user = await authService.getCurrentUser();
             setCurrentUser(user);
-        }
-        setLoading(false);
+            setLoading(false);
+        };
+        initAuth();
+
+        // Listen for changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session?.user) {
+                const user = await authService.getCurrentUser();
+                setCurrentUser(user);
+            } else {
+                setCurrentUser(null);
+            }
+            setLoading(false);
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     useEffect(() => {
         if (currentUser) {
             const userKey = (key: string) => `${key}_${currentUser.id}`;
-            
+
             // VERIFICATION DU RETOUR STRIPE
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('success') === 'true') {
@@ -67,52 +85,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (email: string, password: string): Promise<User | null> => {
         const user = await authService.login(email, password);
-        setCurrentUser(user);
         return user;
     };
 
     const signup = async (email: string, password: string): Promise<User | null> => {
         const user = await authService.signup(email, password);
-        setCurrentUser(user);
         return user;
     };
 
-    const logout = () => {
-        authService.logout();
-        setCurrentUser(null);
+    const logout = async () => {
+        await authService.logout();
     };
 
     const updateCurrentUser = (updatedUser: User) => {
         setCurrentUser(updatedUser);
-        authService.updateCurrentUserInSession(updatedUser);
     };
 
     const upgradeToPro = () => {
         if (currentUser) {
             const userKey = (key: string) => `${key}_${currentUser.id}`;
             localStorage.setItem(userKey('isProMember'), JSON.stringify(true));
-            setCurrentUser({ ...currentUser }); 
+            setCurrentUser({ ...currentUser });
         }
     };
 
-    const completeOnboarding = () => {
+    const completeOnboarding = async () => {
         if (currentUser) {
             const updatedUser = { ...currentUser, onboardingCompleted: true };
             updateCurrentUser(updatedUser);
-            authService.saveUserOnboardingStatus(currentUser.id, true);
+            await authService.saveUserOnboardingStatus(currentUser.id, true);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ 
-            currentUser, 
-            loading, 
-            isProMember, 
-            trialDaysLeft, 
-            login, 
-            signup, 
-            logout, 
-            updateCurrentUser, 
+        <AuthContext.Provider value={{
+            currentUser,
+            loading,
+            isProMember,
+            trialDaysLeft,
+            login,
+            signup,
+            logout,
+            updateCurrentUser,
             upgradeToPro,
             completeOnboarding
         }}>

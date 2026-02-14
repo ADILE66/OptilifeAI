@@ -2,8 +2,9 @@ import * as React from 'react';
 import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
-import { IconLoader, IconEye, IconEyeOff } from '../components/Icons';
+import { IconLoader, IconEye, IconEyeOff, IconGoogle } from '../components/Icons';
 import { useTranslation } from '../i18n/i18n';
+import { signInWithGoogle } from '../services/authService';
 
 const SignupPage: React.FC = () => {
     const { t, setLanguage, language } = useTranslation();
@@ -35,6 +36,11 @@ const SignupPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setLoading(true);
+        await signInWithGoogle();
     };
 
     return (
@@ -85,6 +91,23 @@ const SignupPage: React.FC = () => {
                             className="w-full py-4 px-4 bg-brand-600 text-white font-black rounded-xl hover:bg-brand-500 transition-all shadow-lg shadow-brand-900/20 active:scale-95 disabled:bg-slate-800 disabled:text-slate-500 flex items-center justify-center uppercase tracking-wider text-sm"
                         >
                             {loading ? <IconLoader className="w-6 h-6 animate-spin" /> : t('signup.button')}
+                        </button>
+
+                        <div className="relative my-6 text-center">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-800"></div>
+                            </div>
+                            <span className="relative px-4 bg-slate-900 text-slate-500 text-xs font-bold uppercase tracking-widest">{t('signup.orLogin')}</span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleGoogleSignIn}
+                            disabled={loading}
+                            className="w-full py-4 px-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-100 transition-all shadow-lg active:scale-95 disabled:bg-slate-800 disabled:text-slate-500 flex items-center justify-center gap-3"
+                        >
+                            <IconGoogle className="w-5 h-5" />
+                            <span>S'inscrire avec Google</span>
                         </button>
                     </form>
                 </div>
