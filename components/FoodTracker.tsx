@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { FoodItem, AIAnalysisResult, UserGoals, Recipe } from '../types';
 import { analyzeFoodInput, suggestRecipes, generateRecipeImage } from '../services/geminiService';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
