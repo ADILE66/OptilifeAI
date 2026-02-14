@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            if (currentUser.role === 'admin') {
+            if (currentUser.role === 'admin' || currentUser.isProMember) {
                 setIsProMember(true);
                 setTrialDaysLeft(null);
                 return;

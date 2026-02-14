@@ -140,7 +140,7 @@ const AdminDashboard: React.FC = () => {
 
     const totalUsers = users.length;
     const adminCount = users.filter(u => u.role === 'admin').length;
-    const proCount = users.filter(u => JSON.parse(localStorage.getItem(`isProMember_${u.id}`) || 'false')).length;
+    const proCount = users.filter(u => u.isProMember).length;
 
     return (
         <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4">
@@ -256,8 +256,8 @@ const AdminDashboard: React.FC = () => {
                                             onClick={() => handleToggleRole(user.id, user.role)}
                                             disabled={loadingAction === `role-${user.id}` || user.id === authUser?.id}
                                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${user.role === 'admin'
-                                                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
-                                                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
+                                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
+                                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
                                                 } disabled:opacity-50`}
                                         >
                                             {loadingAction === `role-${user.id}` ? <IconLoader className="w-4 h-4 animate-spin" /> : user.role === 'admin' ? <IconShield className="w-4 h-4" /> : <IconUser className="w-4 h-4" />}
@@ -265,7 +265,7 @@ const AdminDashboard: React.FC = () => {
                                         </button>
                                     </td>
                                     <td className="px-8 py-6">
-                                        {JSON.parse(localStorage.getItem(`isProMember_${user.id}`) || 'false') ? (
+                                        {user.isProMember ? (
                                             <span className="flex items-center gap-1.5 text-amber-500 font-black text-xs uppercase tracking-widest py-2 px-4 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-sm">
                                                 <IconStar className="w-4 h-4 fill-amber-500" />
                                                 PREMIUM

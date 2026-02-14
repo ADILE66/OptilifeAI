@@ -80,6 +80,7 @@ const fetchUserProfile = async (id: string, email: string): Promise<User> => {
         lastName: data.last_name,
         avatar: data.avatar_url,
         onboardingCompleted: data.onboarding_completed,
+        isProMember: data.is_pro_member,
         trialStartedAt: data.trial_started_at ? new Date(data.trial_started_at).getTime() : undefined,
     };
 };
@@ -146,6 +147,7 @@ export const getAllUsers = async (): Promise<User[]> => {
         lastName: profile.last_name,
         avatar: profile.avatar_url,
         onboardingCompleted: profile.onboarding_completed,
+        isProMember: profile.is_pro_member,
         trialStartedAt: profile.trial_started_at ? new Date(profile.trial_started_at).getTime() : undefined,
     }));
 };

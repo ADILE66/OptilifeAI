@@ -11,6 +11,7 @@ export interface User {
   lastName?: string;
   trialStartedAt?: number;
   onboardingCompleted?: boolean;
+  isProMember?: boolean;
 }
 
 export interface UserProfile {
