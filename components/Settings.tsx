@@ -1,5 +1,5 @@
-
-import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import { NotificationSettings, UserProfile, User, UserGoals } from '../types';
 // FIX: Added IconTrash to the imports from ./Icons
 import { IconBell, IconUser, IconLock, IconUpload, IconLoader, IconChartBar, IconTrophy, IconSparkles, IconFire, IconActivity, IconShield, IconEye, IconEyeOff, IconCheckCircle, IconX, IconClock, IconSatellite, IconTrash } from './Icons';
@@ -116,7 +116,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSettingsChange, profile
 
     const handleDeleteAccount = async () => {
         if (!currentUser) return;
-        authService.deleteUser(currentUser.id);
+        await authService.deleteUser(currentUser.id);
         logout();
         navigate('/');
     };
