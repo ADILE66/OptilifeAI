@@ -1,0 +1,9 @@
+{
+  "name": "OptiLife AI",
+  "description": "Optimisation de votre santé à 360° assistée par l'IA.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
