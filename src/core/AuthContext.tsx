@@ -55,8 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         if (user) {
-            const proStatus = localStorage.getItem(`pro_${user.id}`) === 'true';
-            setIsProMember(proStatus);
+            setIsProMember(true);
+            localStorage.setItem(`pro_${user.id}`, 'true');
         }
     }, [user]);
 

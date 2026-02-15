@@ -11,11 +11,22 @@ const genAI = new GoogleGenerativeAI(API_KEY || '');
 
 const parseJSON = (text: string): any => {
     try {
-        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const cleaned = text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
     } catch (e) {
-        console.error("Failed to parse AI JSON response. Raw text:", text, e);
+        console.error("Gemini JSON Parse Error. Raw text:", text);
         return null;
+    }
+}
+
+export const pingAI = async (): Promise<boolean> => {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent("Say 'OK'");
+        return !!result.response.text();
+    } catch (e) {
+        console.error("AI Ping Failed:", e);
+        return false;
     }
 }
 

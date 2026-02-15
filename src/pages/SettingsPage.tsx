@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../core/AuthContext';
 import { useTranslation } from '../i18n/i18n';
-import { IconUser, IconShield, IconBell, IconStar, IconLogOut } from '../ui/Icons';
+import { IconUser, IconShield, IconBell, IconStar, IconLogOut, IconSparkles } from '../ui/Icons';
 import { UserGoals, UserProfile, User } from '../types';
 
 interface SettingsPageProps {
@@ -146,41 +146,44 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ goals, onGoalsChange, profi
                             </div>
                             <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Diagnostic IA</h4>
                         </div>
-                        <p className="text-[10px] text-slate-500 font-bold mb-4">Vérifiez la connexion avec les systèmes OptiLife AI.</p>
 
-                        <button
-                            onClick={async () => {
-                                const btn = document.getElementById('ai-test-btn');
-                                const status = document.getElementById('ai-test-status');
-                                if (!btn || !status) return;
+                        <div className="space-y-4">
+                            <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-2">Clé API Gemini</p>
+                                <div className="flex items-center justify-between">
+                                    {import.meta.env.VITE_GEMINI_API_KEY ? (
+                                        <span className="text-[10px] font-black text-emerald-500">PRÉSENTE ✅</span>
+                                    ) : (
+                                        <span className="text-[10px] font-black text-red-500">MANQUANTE ❌</span>
+                                    )}
+                                </div>
+                            </div>
 
-                                btn.innerText = "TEST EN COURS...";
-                                status.innerText = "Initialisation...";
-                                status.className = "text-[10px] font-bold text-slate-500 mt-2";
-
-                                try {
-                                    const { chatWithCoach } = await import('../services/geminiService');
-                                    const res = await chatWithCoach("dis bonjour brièvement", []);
-                                    if (res) {
-                                        status.innerText = "CONNEXION ÉTABLIE : " + res.substring(0, 30) + "...";
-                                        status.className = "text-[10px] font-black text-emerald-500 mt-2";
-                                    } else {
-                                        throw new Error("Réponse vide");
+                            <button
+                                onClick={async () => {
+                                    const btn = document.getElementById('ai-test-btn');
+                                    const status = document.getElementById('ai-test-status');
+                                    if (!btn || !status) return;
+                                    btn.innerText = "TEST EN COURS...";
+                                    try {
+                                        const { chatWithCoach } = await import('../services/geminiService');
+                                        const res = await chatWithCoach("Bonjour", []);
+                                        status.innerText = "OK : " + res.substring(0, 50) + "...";
+                                        status.className = "text-[9px] font-bold text-emerald-500 mt-2";
+                                    } catch (e: any) {
+                                        status.innerText = "ERREUR : " + (e.message || "Inconnue");
+                                        status.className = "text-[9px] font-bold text-red-500 mt-2";
+                                    } finally {
+                                        btn.innerText = "TESTER LA CONNEXION";
                                     }
-                                } catch (e: any) {
-                                    console.error(e);
-                                    status.innerText = "ERREUR : " + (e.message || "clé invalide ou quota dépassé");
-                                    status.className = "text-[10px] font-black text-red-500 mt-2";
-                                } finally {
-                                    btn.innerText = "TESTER LA CONNEXION";
-                                }
-                            }}
-                            id="ai-test-btn"
-                            className="w-full py-3 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all border border-white/5"
-                        >
-                            TESTER LA CONNEXION
-                        </button>
-                        <div id="ai-test-status" className="text-[10px] font-bold text-slate-500 mt-2">Prêt.</div>
+                                }}
+                                id="ai-test-btn"
+                                className="w-full py-3 bg-brand-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-500 transition-all"
+                            >
+                                TESTER LA CONNEXION
+                            </button>
+                            <div id="ai-test-status" className="text-[9px] font-bold text-slate-500 mt-2 italic">Attente...</div>
+                        </div>
                     </div>
 
                     {!isProMember && (
