@@ -138,6 +138,51 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ goals, onGoalsChange, profi
                         <IconStar className="w-4 h-4 text-slate-700 group-hover:text-brand-500 transition-colors" />
                     </button>
 
+                    {/* AI Diagnostic Section */}
+                    <div className="p-8 bg-slate-900 border border-white/5 rounded-[2.5rem] shadow-xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center">
+                                <IconSparkles className="w-4 h-4" />
+                            </div>
+                            <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Diagnostic IA</h4>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-bold mb-4">Vérifiez la connexion avec les systèmes OptiLife AI.</p>
+
+                        <button
+                            onClick={async () => {
+                                const btn = document.getElementById('ai-test-btn');
+                                const status = document.getElementById('ai-test-status');
+                                if (!btn || !status) return;
+
+                                btn.innerText = "TEST EN COURS...";
+                                status.innerText = "Initialisation...";
+                                status.className = "text-[10px] font-bold text-slate-500 mt-2";
+
+                                try {
+                                    const { chatWithCoach } = await import('../services/geminiService');
+                                    const res = await chatWithCoach("dis bonjour brièvement", []);
+                                    if (res) {
+                                        status.innerText = "CONNEXION ÉTABLIE : " + res.substring(0, 30) + "...";
+                                        status.className = "text-[10px] font-black text-emerald-500 mt-2";
+                                    } else {
+                                        throw new Error("Réponse vide");
+                                    }
+                                } catch (e: any) {
+                                    console.error(e);
+                                    status.innerText = "ERREUR : " + (e.message || "clé invalide ou quota dépassé");
+                                    status.className = "text-[10px] font-black text-red-500 mt-2";
+                                } finally {
+                                    btn.innerText = "TESTER LA CONNEXION";
+                                }
+                            }}
+                            id="ai-test-btn"
+                            className="w-full py-3 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all border border-white/5"
+                        >
+                            TESTER LA CONNEXION
+                        </button>
+                        <div id="ai-test-status" className="text-[10px] font-bold text-slate-500 mt-2">Prêt.</div>
+                    </div>
+
                     {!isProMember && (
                         <div className="p-10 bg-gradient-to-br from-brand-600 to-indigo-700 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden">
                             <div className="relative z-10">
