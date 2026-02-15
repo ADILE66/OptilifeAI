@@ -2,6 +2,11 @@
 import { AIAnalysisResult, Recipe } from "../types";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!API_KEY) {
+    console.error("CRITICAL: Gemini API Key is missing! Check your .env file or Vercel environment variables.");
+}
+
 const genAI = new GoogleGenerativeAI(API_KEY || '');
 
 const parseJSON = (text: string): any => {
@@ -9,7 +14,7 @@ const parseJSON = (text: string): any => {
         const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
     } catch (e) {
-        console.error("Failed to parse JSON", e);
+        console.error("Failed to parse AI JSON response. Raw text:", text, e);
         return null;
     }
 }

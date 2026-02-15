@@ -482,11 +482,90 @@ const FoodTracker: React.FC<FoodTrackerProps> = ({ logs, onAdd, onDelete, goals,
                         </button>
                     </div>
                 ) : (
-                    <div className="text-center py-20 px-8 border border-white/5 border-dashed rounded-[2.5rem]">
-                        <IconChefHat className="w-16 h-16 text-slate-700 mx-auto mb-6" />
-                        <h3 className="text-xl font-black text-white italic uppercase tracking-tight mb-2">Générateur intelligent</h3>
-                        <p className="text-sm text-slate-500 font-bold mb-8">L'interface de recettes est en cours d'optimisation pour votre profil.</p>
-                        <button onClick={() => setActiveTab('journal')} className="px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all">Retour au Journal</button>
+                    <div className="space-y-8">
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    value={recipeQuery}
+                                    onChange={(e) => setRecipeQuery(e.target.value)}
+                                    placeholder="De quoi avez-vous envie ? (Ex: repas rapide protéiné...)"
+                                    className="w-full bg-slate-800 border border-white/5 text-white p-5 rounded-2xl text-sm font-bold focus:outline-none focus:border-brand-500 transition-all placeholder:text-slate-600 shadow-inner"
+                                />
+                                <button
+                                    onClick={handleGenerateRecipes}
+                                    disabled={isGeneratingRecipes}
+                                    className="absolute right-2 top-2 bottom-2 px-6 bg-brand-600 text-white font-black rounded-xl hover:bg-brand-500 transition-all text-[10px] uppercase tracking-widest disabled:opacity-50"
+                                >
+                                    {isGeneratingRecipes ? <IconLoader className="w-4 h-4 animate-spin" /> : 'GÉNÉRER'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {suggestedRecipes.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {suggestedRecipes.map((recipe) => (
+                                    <div key={recipe.id} className="bg-slate-800/30 border border-white/5 rounded-[2rem] overflow-hidden group hover:border-brand-500/30 transition-all flex flex-col">
+                                        <div className="aspect-[4/3] bg-slate-800 relative overflow-hidden">
+                                            {recipe.imageUrl ? (
+                                                <img src={recipe.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={recipe.name} />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <button
+                                                        onClick={() => handleGenerateIndividualImage(recipe.id, recipe.name)}
+                                                        disabled={loadingImages[recipe.id]}
+                                                        className="flex flex-col items-center gap-2 text-slate-500 hover:text-brand-500 transition-colors"
+                                                    >
+                                                        {loadingImages[recipe.id] ? <IconLoader className="w-8 h-8 animate-spin" /> : <IconCamera className="w-8 h-8" />}
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Générer l'image</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 flex items-center gap-1.5">
+                                                <IconClock className="w-3 h-3 text-brand-400" />
+                                                <span className="text-[10px] font-black text-white">{recipe.prepTimeMinutes} MIN</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 flex-1 flex flex-col">
+                                            <h4 className="text-sm font-black text-white uppercase italic mb-2 tracking-tight line-clamp-1">{recipe.name}</h4>
+                                            <p className="text-[10px] font-medium text-slate-500 line-clamp-2 mb-4 flex-1">{recipe.description}</p>
+
+                                            <div className="flex justify-between items-center mb-6 pt-4 border-t border-white/5">
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black text-white">{recipe.macros.calories}</p>
+                                                    <p className="text-[8px] font-bold text-slate-600 uppercase">KCAL</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black text-white">{recipe.macros.protein}g</p>
+                                                    <p className="text-[8px] font-bold text-slate-600 uppercase">PROT</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black text-white">{recipe.macros.carbs}g</p>
+                                                    <p className="text-[8px] font-bold text-slate-600 uppercase">GLU</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black text-white">{recipe.macros.fat}g</p>
+                                                    <p className="text-[8px] font-bold text-slate-600 uppercase">LIP</p>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleAddRecipeToLog(recipe)}
+                                                className="w-full py-4 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-2 group/btn"
+                                            >
+                                                <IconPlus className="w-3 h-3" /> Consommer
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-16 px-8 border border-white/5 border-dashed rounded-[2.5rem] bg-slate-800/10">
+                                <IconChefHat className="w-12 h-12 text-slate-800 mx-auto mb-4" />
+                                <h3 className="text-sm font-black text-white uppercase italic mb-1">Générateur de Repas Haute Performance</h3>
+                                <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Entrez vos envies ci-dessus pour commencer l'algorithme.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

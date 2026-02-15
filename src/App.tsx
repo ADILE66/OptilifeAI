@@ -161,9 +161,9 @@ const SleepWrapper = () => {
 
 const WeightWrapper = () => {
     const { isProMember } = useAuth();
-    const { weightLogs, updateProfile, userGoals, userProfile } = useData();
+    const { weightLogs, updateProfile, deleteWeight, userGoals, userProfile } = useData();
     const { setProModalOpen } = useOutletContext<{ setProModalOpen: (o: boolean) => void }>();
-    return <WeightTracker logs={weightLogs} onAdd={(w) => updateProfile({ weightKg: w })} onDelete={() => { }} goals={userGoals} profile={userProfile} isProMember={isProMember} onUpgradeClick={() => setProModalOpen(true)} />;
+    return <WeightTracker logs={weightLogs} onAdd={(w) => updateProfile({ weightKg: w })} onDelete={deleteWeight} goals={userGoals} profile={userProfile} isProMember={isProMember} onUpgradeClick={() => setProModalOpen(true)} />;
 };
 
 const BadgesWrapper = () => {

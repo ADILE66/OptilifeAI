@@ -7,7 +7,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isProMember, setIsProMember] = useState(false);
+    const [isProMember, setIsProMember] = useState(true); // Enabled by default for testing/review
     const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(7);
 
     useEffect(() => {
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             login,
             signup,
             logout,
-            updateCurrentUser: (u) => setUser(u),
+            updateCurrentUser: (u) => setUser(prev => prev ? { ...prev, ...u } : null),
             upgradeToPro,
             completeOnboarding
         }}>

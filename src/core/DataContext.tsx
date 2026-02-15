@@ -29,6 +29,7 @@ interface DataContextType {
     deleteFasting: (id: string) => void;
     addSleep: (log: Omit<SleepLog, 'id' | 'timestamp'>) => void;
     deleteSleep: (id: string) => void;
+    deleteWeight: (id: string) => void;
     updateGoals: (goals: Partial<UserGoals>) => void;
     updateProfile: (profile: Partial<UserProfile>) => void;
 
@@ -138,6 +139,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     const deleteSleep = (id: string) => setSleepLogs(p => p.filter(l => l.id !== id));
 
+    const deleteWeight = (id: string) => setWeightLogs(p => p.filter(l => l.id !== id));
+
     const updateGoals = (goals: Partial<UserGoals>) => setUserGoals(prev => ({ ...prev, ...goals }));
 
     const updateProfile = (profile: Partial<UserProfile>) => {
@@ -158,6 +161,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userGoals, earnedBadgeIds, userProfile,
             addWater, deleteWater, addFood, deleteFood, addActivity, deleteActivity,
             startFasting, endFasting, addFastingLog, deleteFasting, addSleep, deleteSleep,
+            deleteWeight,
             updateGoals, updateProfile,
             newlyEarnedBadges, clearNewBadge
         }}>
