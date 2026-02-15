@@ -1,7 +1,9 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '../core/supabase';
 import { User } from '../types';
 
 export const login = async (email: string, password: string): Promise<User | null> => {
+    if (!supabase) throw new Error("Supabase is not configured. Please check your environment variables.");
+
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -9,7 +11,7 @@ export const login = async (email: string, password: string): Promise<User | nul
 
     if (error) {
         console.error('Login error:', error.message);
-        return null;
+        throw error;
     }
 
     if (data.user) {
@@ -19,6 +21,8 @@ export const login = async (email: string, password: string): Promise<User | nul
 };
 
 export const signup = async (email: string, password: string): Promise<User | null> => {
+    if (!supabase) throw new Error("Supabase is not configured.");
+
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -26,7 +30,7 @@ export const signup = async (email: string, password: string): Promise<User | nu
 
     if (error) {
         console.error('Signup error:', error.message);
-        return null;
+        throw error;
     }
 
     if (data.user) {
@@ -61,28 +65,60 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 const fetchUserProfile = async (id: string, email: string): Promise<User> => {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
+    console.log("Fetching profile for UID:", id);
+    try {
+        let { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-    if (error) {
-        console.error('Error fetching profile:', error.message);
-        return { id, email, role: 'user' };
+        if (error) {
+            console.log("Profile fetch error code:", error.code);
+            // If profile doesn't exist, create it (fallback for trigger)
+            if (error.code === 'PGRST116') {
+                console.log('Profile missing, creating one for:', id);
+                const now = new Date().toISOString();
+                const { data: newData, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id,
+                        first_name: '',
+                        last_name: '',
+                        role: 'user',
+                        trial_started_at: now
+                    }])
+                    .select()
+                    .single();
+
+                if (insertError) {
+                    console.error('Error creating profile fallback:', insertError.message);
+                    return { id, email, role: 'user', onboardingCompleted: false, isProMember: true, trialStartedAt: Date.now() };
+                }
+                data = newData;
+            } else {
+                console.error('Error fetching profile:', error.message);
+                return { id, email, role: 'user', onboardingCompleted: false, isProMember: false };
+            }
+        }
+
+        console.log("Profile data loaded successfully");
+        return {
+            id: data.id,
+            email: email,
+            role: (data.role as 'user' | 'admin') || 'user',
+            firstName: data.first_name || '',
+            lastName: data.last_name || '',
+            avatar: data.avatar_url || '',
+            onboardingCompleted: !!data.onboarding_completed,
+            isProMember: !!data.is_pro_member,
+            // Fallback to now if trial_started_at is missing for some reason
+            trialStartedAt: new Date(data.trial_started_at || Date.now()).getTime(),
+        };
+    } catch (err) {
+        console.error('Unexpected error in fetchUserProfile:', err);
+        return { id, email, role: 'user', onboardingCompleted: false, isProMember: false };
     }
-
-    return {
-        id: data.id,
-        email: email,
-        role: data.role as 'user' | 'admin',
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatar: data.avatar_url,
-        onboardingCompleted: data.onboarding_completed,
-        isProMember: data.is_pro_member,
-        trialStartedAt: data.trial_started_at ? new Date(data.trial_started_at).getTime() : undefined,
-    };
 };
 
 export const saveUserOnboardingStatus = async (userId: string, completed: boolean) => {

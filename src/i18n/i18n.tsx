@@ -1442,7 +1442,7 @@ export type Language = 'fr' | 'en' | 'es';
 interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, options?: { [key: string]: string | number | undefined }) => string;
+  t: (key: string, options?: any) => any;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -1472,13 +1472,37 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('appLanguage', language);
   }, [language]);
 
-  const t = (key: string, options?: { [key: string]: string | number | undefined }) => {
-    const langTranslations = translations[language];
-    const translation = key.split('.').reduce((obj: any, k) => (obj ? obj[k] : undefined), langTranslations);
+  const t = (key: string, options?: any) => {
+    const langData = language === 'fr' ? fr : en;
 
-    if (typeof translation !== 'string') {
-      return key;
+    // Support for nested keys (e.g., 'onboarding.goals.weight_loss')
+    const keys = key.split('.');
+    let translation: any = langData;
+
+    for (const k of keys) {
+      if (translation && typeof translation === 'object' && k in translation) {
+        translation = translation[k];
+      } else {
+        translation = null;
+        break;
+      }
     }
+
+    if (!translation) return key;
+
+    if (options?.returnObjects) {
+      return translation;
+    }
+
+    if (typeof translation !== 'string') return key;
+
+    const interpolate = (text: string, params: any) => {
+      let result = text;
+      Object.keys(params).forEach(p => {
+        result = result.replace(new RegExp(`{{${p}}}`, 'g'), params[p]);
+      });
+      return result;
+    };
 
     return options ? interpolate(translation, options) : translation;
   };
