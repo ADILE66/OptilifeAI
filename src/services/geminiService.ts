@@ -1,16 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+﻿import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIAnalysisResult, Recipe } from "../types";
 
-// Helper to get the API Key safely in Vite
-const getApiKey = () => {
-    return import.meta.env.VITE_GEMINI_API_KEY || "";
-};
-
-const genAI = new GoogleGenerativeAI(getApiKey());
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(API_KEY || '');
 
 const parseJSON = (text: string): any => {
     try {
-        // clean markdown if present
         const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
     } catch (e) {
@@ -25,8 +20,8 @@ export const analyzeFoodInput = async (
 ): Promise<AIAnalysisResult | null> => {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const parts: any[] = [];
 
+        const parts: any[] = [];
         if (imageBase64) {
             parts.push({
                 inlineData: {
@@ -48,11 +43,7 @@ export const analyzeFoodInput = async (
         const result = await model.generateContent(parts);
         const response = await result.response;
         const text = response.text();
-
-        if (text) {
-            return parseJSON(text);
-        }
-        return null;
+        return parseJSON(text);
 
     } catch (error) {
         console.error("Gemini Analysis Error:", error);
@@ -85,20 +76,28 @@ export const suggestRecipes = async (
         
         CRITICAL: All text content (name, description, ingredients, instructions) MUST be written in ${targetLang}.
         
-        Return an array of 3 recipe objects. Each object MUST have:
-        id (string), name (string), description (string), prepTimeMinutes (number), ingredients (array of strings), instructions (array of strings), 
-        macros (object with calories, protein, carbs, fat as numbers).
+        Return the recipes in as a JSON array of objects with the following structure:
+        {
+            "id": "string",
+            "name": "string",
+            "description": "string",
+            "prepTimeMinutes": number,
+            "ingredients": ["string"],
+            "instructions": ["string"],
+            "macros": {
+                "calories": number,
+                "protein": number,
+                "carbs": number,
+                "fat": number
+            }
+        }
         `;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-
-        if (text) {
-            const parsed = parseJSON(text);
-            return Array.isArray(parsed) ? parsed : [];
-        }
-        return [];
+        const parsed = parseJSON(text);
+        return Array.isArray(parsed) ? parsed : [];
 
     } catch (error) {
         console.error("Gemini Recipe Error:", error);
@@ -107,16 +106,15 @@ export const suggestRecipes = async (
 };
 
 export const generateRecipeImage = async (recipeName: string): Promise<string | null> => {
-    // Note: Gemini 1.5 doesn't generate images directly via this SDK. 
-    // Usually, we'd use Imagen or a placeholder. 
-    // To keep it working as requested (high quality visual), we use a high-quality Unsplash search URL as a fallback
-    // OR just return null if no generation possible.
-    const query = encodeURIComponent(recipeName + " food professional photography");
-    return `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800&sig=${Math.random()}`;
+    // Gemini 1.5 Flash doesn't generate images directly in this SDK way, 
+    // it's for text/multimodal input. Usually image generation is a separate service or Imagen.
+    // We'll use a high-quality placeholder or a search-like tool if available, but for now, 
+    // let's return a nice high-quality food image from Unsplash.
+    return `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800&q=80`;
 }
 
 export const generateInsights = async (
-    type: 'water' | 'food' | 'activity' | 'fasting' | 'sleep',
+    type: 'water' | 'food' | 'activity' | 'fasting' | 'sleep' | 'weight',
     dataSummary: string
 ): Promise<string> => {
     try {
@@ -139,15 +137,16 @@ export const generateInsights = async (
             case 'sleep':
                 systemInstruction = "Tu es un spécialiste du sommeil. Analyse les habitudes de sommeil. Commente la durée et la régularité. Donne un conseil pour améliorer la qualité du repos ou l'hygiène de sommeil.";
                 break;
+            case 'weight':
+                systemInstruction = "Tu es un expert en physiologie. Analyse l'évolution du poids. Commente la tendance (perte, gain ou stagnation) de manière bienveillante. Donne un conseil sur la composition corporelle ou la patience métabolique.";
+                break;
         }
 
-        const prompt = `${systemInstruction}\n\nVoici mes données récentes : ${dataSummary}. Analyse-les et donne-moi des conseils brefs et utiles.`;
+        const prompt = `${systemInstruction}\n\nVoici mes données récentes :\n${dataSummary}\n\nAnalyse-les et donne-moi des conseils brefs et impactants.`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
-
-        return text || "Désolé, je n'ai pas pu générer d'analyse pour le moment.";
+        return response.text() || "Désolé, je n'ai pas pu générer d'analyse pour le moment.";
 
     } catch (error) {
         console.error("Gemini Insights Error:", error);
@@ -162,18 +161,19 @@ export const chatWithCoach = async (
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const chat = model.startChat({
-            history: history,
-            generationConfig: {
-                maxOutputTokens: 500,
-            },
-        });
-
         const systemInstruction = "Tu es un coach de santé personnel et bienveillant nommé OptiLife Coach. Ton but est d'aider l'utilisateur à atteindre ses objectifs de santé (poids, hydratation, sommeil, sport). Tu es motivant, empathique et tu donnes des conseils pratiques basés sur la science. Tes réponses doivent être concises et encourageantes.";
 
-        const result = await chat.sendMessage(`${systemInstruction}\n\nUser: ${message}`);
+        const chat = model.startChat({
+            history: history.map(h => ({
+                role: h.role,
+                parts: h.parts
+            })),
+            systemInstruction: systemInstruction
+        });
+
+        const result = await chat.sendMessage(message);
         const response = await result.response;
-        return response.text();
+        return response.text() || "Désolé, je ne trouve pas de réponse.";
 
     } catch (error) {
         console.error("Gemini Chat Error:", error);

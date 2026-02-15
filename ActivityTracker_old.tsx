@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ActivityLog, UserProfile } from '../types';
-import { IconPlus, IconActivity, IconTrash, IconChartBar, IconSparkles, IconLock, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconCheckCircle, IconRun, IconBike, IconSwim, IconDumbbell, IconYoga, IconCpu, IconSatellite, IconStar } from '../ui/Icons';
+import { IconPlus, IconActivity, IconTrash, IconChartBar, IconSparkles, IconLock, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconCheckCircle, IconRun, IconBike, IconSwim, IconDumbbell, IconYoga, IconCpu, IconSatellite, IconStar } from './Icons';
 import { useTranslation } from '../i18n/i18n';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import AIInsightsModal from '../components/AIInsightsModal';
+import AIInsightsModal from './AIInsightsModal';
 
 interface ActivityTrackerProps {
     logs: ActivityLog[];
@@ -74,7 +74,9 @@ const usePedometer = (isTracking: boolean) => {
                     const magnitude = Math.sqrt(x * x + y * y + z * z);
                     detectStep(magnitude, 2.5);
                 });
-                sensor.addEventListener('error', () => startDeviceMotionFallback());
+                sensor.addEventListener('error', (e: any) => {
+                    startDeviceMotionFallback();
+                });
                 sensor.start();
                 setSource('hardware');
                 return () => sensor.stop();
@@ -161,15 +163,8 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ logs, onAdd, onDelete
     const watchIdRef = useRef<number | null>(null);
     const lastPositionRef = useRef<{ lat: number, lon: number } | null>(null);
 
-    const totalMinutesToday = useMemo(() => {
-        const start = new Date().setHours(0, 0, 0, 0);
-        return logs.filter(l => l.timestamp >= start).reduce((acc, log) => acc + log.durationMinutes, 0);
-    }, [logs]);
-
-    const totalCaloriesToday = useMemo(() => {
-        const start = new Date().setHours(0, 0, 0, 0);
-        return logs.filter(l => l.timestamp >= start).reduce((acc, log) => acc + log.caloriesBurned, 0);
-    }, [logs]);
+    const totalMinutes = logs.reduce((acc, log) => acc + log.durationMinutes, 0);
+    const totalCalories = logs.reduce((acc, log) => acc + log.caloriesBurned, 0);
 
     useEffect(() => {
         if (!selectedActivity && activityTypes.length > 0) {
@@ -294,7 +289,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ logs, onAdd, onDelete
     const handleManualAdd = (e: React.FormEvent) => {
         e.preventDefault();
         const activityObj = activityTypes.find(a => a.key === selectedManualActivity);
-        const name = activityName || (activityObj ? activityObj.name : 'Activité');
+        const name = activityName || (activityObj ? activityObj.name : 'Activit├®');
         if (duration && calories) {
             onAdd({
                 activityName: name,
@@ -325,170 +320,144 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ logs, onAdd, onDelete
     }, [logs, historyView]);
 
     const todaysLogs = useMemo(() => {
-        const start = new Date().setHours(0, 0, 0, 0);
-        return logs.filter(l => l.timestamp >= start).sort((a, b) => b.timestamp - a.timestamp);
+        const start = new Date(); start.setHours(0, 0, 0, 0);
+        return logs.filter(l => l.timestamp >= start.getTime()).sort((a, b) => b.timestamp - a.timestamp);
     }, [logs]);
 
     return (
         <div className="space-y-6">
-            {/* Realtime Stats Today */}
-            <div className="bg-slate-900 rounded-[2.5rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
-                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center">
-                                <IconActivity className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-white italic uppercase tracking-tight italic">ACTIVE ENGINE</h2>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('common.today')}</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div>
-                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 italic">TEMPS ACTIF</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-black text-white italic tabular-nums">{totalMinutesToday}</span>
-                                    <span className="text-xs font-bold text-slate-500 uppercase italic">min</span>
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 italic">CALORIES</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-black text-white italic tabular-nums">{totalCaloriesToday}</span>
-                                    <span className="text-xs font-bold text-slate-500 uppercase italic">kcal</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div className="bg-slate-900 rounded-2xl shadow-sm p-6 border border-slate-800">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                    <IconActivity className="w-6 h-6 text-emerald-500" />
+                    {t('activityTracker.title')}
+                </h2>
 
-                    <div className="bg-black/20 rounded-[2rem] p-6 border border-white/5 flex flex-col gap-4">
-                        <div className="bg-slate-800/50 p-1.5 rounded-2xl flex gap-2">
-                            {(['live', 'manual'] as const).map(m => (
-                                <button key={m} onClick={() => setMode(m)} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-                                    {m === 'live' ? 'TRACKING LIVE' : 'AJOUT MANUEL'}
-                                    {m === 'live' && !isProMember && <IconLock className="w-2.5 h-2.5 inline-block ml-1" />}
-                                </button>
-                            ))}
-                        </div>
-
-                        {mode === 'live' && (
-                            <div className="animate-in fade-in duration-500">
-                                {isTracking ? (
-                                    <div className="text-center space-y-4">
-                                        <div className="text-4xl font-black text-white italic tabular-nums">{formatTime(elapsedSeconds)}</div>
-                                        <div className="flex justify-center gap-3">
-                                            {isPaused ? <button onClick={handleResumeTracking} className="p-4 bg-emerald-500 text-white rounded-2xl shadow-lg"><IconPlayerPlay className="w-5 h-5" /></button> : <button onClick={handlePauseTracking} className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg"><IconPlayerPause className="w-5 h-5" /></button>}
-                                            <button onClick={handleStopTracking} className="p-4 bg-red-500 text-white rounded-2xl shadow-lg"><IconPlayerStop className="w-5 h-5" /></button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <button
-                                            onClick={handleStartTracking}
-                                            className="w-full py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-500 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-brand-600/20 active:scale-95"
-                                        >
-                                            {isProMember ? 'DÉMARRER LA SESSION' : 'VERSION PRO REQUISE'}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {mode === 'manual' && (
-                            <button onClick={() => setMode('manual')} className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95">
-                                CONFIGURATION MANUELLE
-                            </button>
-                        )}
-                    </div>
-                </div>
-                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full group-hover:bg-emerald-500/10 transition-colors" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] border border-white/5 p-8 shadow-2xl">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                        <div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                <IconChartBar className="w-5 h-5 text-brand-500" />
-                                {t('common.history')}
-                            </h3>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Évolution de la charge d'entraînement</p>
-                        </div>
-                        <div className="flex items-center bg-slate-800 p-1.5 rounded-2xl border border-white/5">
-                            {(['week', 'month', 'year'] as const).map(view => (
-                                <button
-                                    key={view}
-                                    onClick={() => setHistoryView(view)}
-                                    className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyView === view ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                                >
-                                    {t(`common.${view}`)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={historyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff03" />
-                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '20px', border: '1px solid #ffffff10', backgroundColor: '#0f172a', color: '#fff' }}
-                                    cursor={{ fill: '#ffffff05' }}
-                                    formatter={(value: number) => [`${value} min`, 'Durée']}
-                                />
-                                <Bar dataKey="value" fill="#10b981" radius={[6, 6, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="bg-slate-900 rounded-[2.5rem] border border-white/5 p-8 shadow-2xl flex flex-col">
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">{t('activityTracker.historyTitle')}</h3>
-                    <div className="space-y-4 overflow-y-auto custom-scrollbar flex-1 pr-2">
-                        {todaysLogs.length === 0 ? (
-                            <div className="text-center py-12">
-                                <IconActivity className="w-8 h-8 text-slate-800 mx-auto mb-3" />
-                                <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">AUCUNE ACTIVITÉ</p>
-                            </div>
-                        ) : (
-                            todaysLogs.map((log) => {
-                                const LogIcon = iconMap[log.icon || 'activity'] || IconActivity;
-                                return (
-                                    <div key={log.id} className="group/item flex gap-4 p-4 bg-slate-800/30 border border-white/5 rounded-2xl hover:bg-slate-800/50 transition-all">
-                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-                                            <LogIcon className="w-5 h-5" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <h4 className="text-xs font-black text-white truncate uppercase italic">{log.activityName}</h4>
-                                                <button onClick={() => onDelete(log.id)} className="opacity-0 group-hover/item:opacity-100 text-slate-600 hover:text-red-500 transition-all ml-2">
-                                                    <IconTrash className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] font-black text-emerald-400">{log.durationMinutes} min</span>
-                                                <span className="text-[10px] text-slate-600 font-bold tracking-tight uppercase">{log.caloriesBurned} kcal</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                    <button onClick={() => setIsInsightsOpen(true)} className="mt-8 w-full py-4 bg-gradient-to-r from-brand-600 to-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-600/20 active:scale-95 flex items-center justify-center gap-2">
-                        <IconSparkles className="w-4 h-4" /> PERFORMANCE INSIGHTS
+                <div className="bg-slate-800 p-1 rounded-lg flex items-center text-sm w-full mb-6">
+                    <button onClick={() => setMode('live')} className={`w-1/2 py-2 rounded-md transition-colors font-semibold flex items-center justify-center gap-2 ${mode === 'live' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
+                        {t('activityTracker.liveMode')} {!isProMember && <IconLock className="w-3 h-3" />}
                     </button>
+                    <button onClick={() => setMode('manual')} className={`w-1/2 py-2 rounded-md transition-colors font-semibold ${mode === 'manual' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>{t('activityTracker.manualMode')}</button>
                 </div>
+
+                {mode === 'live' ? (
+                    !isProMember ? (
+                        <div className="text-center py-12 px-6 bg-emerald-500/10 rounded-2xl border border-dashed border-emerald-500/20">
+                            <IconLock className="w-12 h-12 mx-auto text-emerald-500/50 mb-4" />
+                            <p className="text-emerald-200 font-bold mb-2">{t('common.proFeature')}</p>
+                            <p className="text-sm text-emerald-500/70 mb-6">{t('activityTracker.proLockMessage')}</p>
+                            <button onClick={onUpgradeClick} className="px-6 py-2.5 bg-brand-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 mx-auto hover:bg-brand-500 transition-all">
+                                <IconStar className="w-4 h-4 text-yellow-400" fill="currentColor" /> {t('dashboard.proFeatureButton')}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {!isTracking ? (
+                                <div>
+                                    <label className="text-sm font-medium text-slate-300 mb-1 block">{t('activityTracker.selectActivity')}</label>
+                                    <select value={selectedActivity?.key || ''} onChange={(e) => setSelectedActivity(activityTypes.find(a => a.key === e.target.value) || null)} className="w-full px-4 py-2 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-800 text-white mb-4">
+                                        {activityTypes.map(type => <option key={type.key} value={type.key}>{type.name}</option>)}
+                                    </select>
+                                    <button onClick={handleStartTracking} disabled={!selectedActivity} className="w-full py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-500 transition-colors flex items-center justify-center gap-2 disabled:bg-slate-700 disabled:text-slate-500"><IconPlayerPlay className="w-5 h-5" /> {t('activityTracker.startButton')}</button>
+                                    {gpsError && <p className="text-sm text-red-400 text-center mt-2">{gpsError}</p>}
+                                </div>
+                            ) : (
+                                <div className="text-center space-y-4 animate-in fade-in">
+                                    <p className="font-semibold text-lg text-emerald-400 flex items-center justify-center gap-2">{selectedActivity?.name}<span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full animate-pulse"><IconCheckCircle className="w-3 h-3" /> Actif</span></p>
+                                    <div className="text-6xl font-bold font-mono tracking-tighter text-white">{formatTime(elapsedSeconds)}</div>
+                                    <div className="grid grid-cols-3 gap-4 text-center">
+                                        <div><p className="text-sm text-slate-400">{t('activityTracker.distance')}</p><p className="font-bold text-xl text-slate-200">{distanceKm.toFixed(2)} km</p></div>
+                                        <div><p className="text-sm text-slate-400">{t('activityTracker.steps')}</p><p className="font-bold text-xl text-slate-200">{displaySteps}</p></div>
+                                        <div><p className="text-sm text-slate-400">{t('activityTracker.calories')}</p><p className="font-bold text-xl text-slate-200">{liveCalories}</p></div>
+                                    </div>
+                                    <div className="flex justify-center gap-4 pt-4">
+                                        {isPaused ? <button onClick={handleResumeTracking} className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center hover:bg-emerald-600 shadow-lg"><IconPlayerPlay className="w-8 h-8" /></button> : <button onClick={handlePauseTracking} className="w-16 h-16 bg-amber-500 text-white rounded-full flex items-center justify-center hover:bg-amber-600 shadow-lg"><IconPlayerPause className="w-8 h-8" /></button>}
+                                        <button onClick={handleStopTracking} className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"><IconPlayerStop className="w-8 h-8" /></button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                ) : (
+                    <form onSubmit={handleManualAdd} className="space-y-4 animate-in fade-in">
+                        <div className="grid grid-cols-1 gap-3">
+                            <div className="flex gap-3 flex-col sm:flex-row">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium text-slate-300 mb-1 block">Type</label>
+                                    <select value={selectedManualActivity} onChange={(e) => setSelectedManualActivity(e.target.value)} className="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                        {activityTypes.map(type => <option key={type.key} value={type.key}>{type.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium text-slate-300 mb-1 block">D├®tails</label>
+                                    <input type="text" placeholder="Ex: Matin" value={activityName} onChange={e => setActivityName(e.target.value)} className="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                                </div>
+                            </div>
+                            <div className="flex gap-3 flex-col sm:flex-row">
+                                <div className="flex-1"><label className="text-sm font-medium text-slate-300 mb-1 block">{t('activityTracker.manualDurationPlaceholder')}</label><input type="number" placeholder="min" value={duration} onChange={e => setDuration(e.target.value)} required className="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" /></div>
+                                <div className="flex-1"><label className="text-sm font-medium text-slate-300 mb-1 block">{t('activityTracker.distance')}</label><input type="number" step="0.01" placeholder="km" value={distance} onChange={e => setDistance(e.target.value)} className="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" /></div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-slate-300 mb-2 block">Ic├┤ne</label>
+                                <div className="flex gap-2">
+                                    {Object.entries(iconMap).map(([key, Icon]) => (
+                                        <button key={key} type="button" onClick={() => setManualIcon(key)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${manualIcon === key ? 'bg-emerald-500 text-white ring-2 ring-emerald-500/50' : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white'}`}><Icon className="w-5 h-5" /></button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-500 transition-colors flex items-center justify-center gap-2"><IconPlus className="w-5 h-5" /> {t('activityTracker.addButton')}</button>
+                    </form>
+                )}
             </div>
 
-            <AIInsightsModal
-                isOpen={isInsightsOpen}
-                onClose={() => setIsInsightsOpen(false)}
-                type="activity"
-                dataSummary={todaysLogs.map(l => `${l.activityName}: ${l.durationMinutes}min`).join('\n')}
-            />
+            <div className="bg-slate-900 rounded-2xl shadow-sm p-6 border border-slate-800">
+                <h3 className="text-lg font-semibold text-white mb-4">{t('activityTracker.historyTitle')}</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4 text-center">
+                    <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><p className="text-xs text-emerald-400">{t('activityTracker.totalMinutes')}</p><p className="text-xl font-bold text-emerald-100">{totalMinutes}</p></div>
+                    <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><p className="text-xs text-emerald-400">{t('activityTracker.caloriesBurned')}</p><p className="text-xl font-bold text-emerald-100">{totalCalories}</p></div>
+                </div>
+                {todaysLogs.length === 0 ? <p className="text-slate-500 text-center py-4">{t('activityTracker.noActivity')}</p> : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                        {todaysLogs.map((log) => {
+                            const LogIcon = iconMap[log.icon || 'activity'] || IconActivity;
+                            return (
+                                <div key={log.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-slate-700">
+                                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500"><LogIcon className="w-4 h-4" /></div><div><p className="font-semibold text-white">{log.activityName}</p><p className="text-xs text-slate-400">{log.durationMinutes} min &middot; {log.caloriesBurned} kcal {log.steps ? ` \u00B7 ${log.steps} pas` : ''}</p></div></div>
+                                    <button onClick={() => onDelete(log.id)} className="text-slate-500 hover:text-red-400 p-2"><IconTrash className="w-4 h-4" /></button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-slate-900 rounded-2xl shadow-sm p-6 border border-slate-800">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><IconChartBar className="w-6 h-6 text-brand-500" />{t('common.history')}</h3>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => isProMember ? setIsInsightsOpen(true) : onUpgradeClick()} className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-brand-600 to-purple-600 text-white rounded-lg text-xs font-bold hover:opacity-90">{isProMember ? <IconSparkles className="w-3 h-3" /> : <IconLock className="w-3 h-3" />}{t('common.analyze')}</button>
+                        <div className="bg-slate-800 p-1 rounded-lg flex text-xs">
+                            {(['week', 'month', 'year'] as const).map(view => (
+                                <button key={view} onClick={() => isProMember || view === 'week' ? setHistoryView(view) : onUpgradeClick()} className={`px-3 py-1 rounded-md transition-colors ${historyView === view ? 'bg-slate-700 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
+                                    {t(`common.${view}`)} {(!isProMember && view !== 'week') && <IconLock className="inline w-2.5 h-2.5 ml-1" />}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={historyData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                            <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #1e293b', backgroundColor: '#0f172a', color: '#fff' }} cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }} formatter={(value: number) => [`${value} min`, 'Dur├®e']} />
+                            <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+            <AIInsightsModal isOpen={isInsightsOpen} onClose={() => setIsInsightsOpen(false)} type="activity" dataSummary={logs.slice(0, 10).map(l => `${l.activityName}: ${l.durationMinutes}min`).join('\n')} />
         </div>
     );
 };

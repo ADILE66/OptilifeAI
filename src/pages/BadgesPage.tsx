@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../i18n/i18n';
-import { BADGES } from '../constants/badges';
-import { IconAward, IconCheckCircle, IconX } from '../ui/Icons';
+import { allBadges } from '../utils/badgeManager';
+import { IconCheckCircle } from '../ui/Icons';
 
 const BadgesPage = ({ earnedBadgeIds = [] }: { earnedBadgeIds?: string[] }) => {
     const { t } = useTranslation();
@@ -14,7 +14,7 @@ const BadgesPage = ({ earnedBadgeIds = [] }: { earnedBadgeIds?: string[] }) => {
             </header>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {BADGES.map((badge: any) => {
+                {allBadges.map((badge: any) => {
                     const isEarned = earnedBadgeIds.includes(badge.id);
                     return (
                         <div

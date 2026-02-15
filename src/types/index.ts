@@ -1,4 +1,3 @@
-
 import type { FC } from 'react';
 
 export interface User {
@@ -11,7 +10,6 @@ export interface User {
   lastName?: string;
   trialStartedAt?: number;
   onboardingCompleted?: boolean;
-  isProMember?: boolean;
 }
 
 export interface UserProfile {
@@ -33,9 +31,9 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<User | null>;
   signup: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
-  updateCurrentUser: (updatedUser: User) => void;
-  upgradeToPro: () => void;
+  updateCurrentUser: (updatedUser: Partial<User>) => void;
   completeOnboarding: () => void;
+  upgradeToPro: () => void;
 }
 
 export interface UserGoals {
@@ -49,8 +47,6 @@ export interface UserGoals {
   weight?: number;
   sleepHours: number;
 }
-
-// Added missing types to fix compilation errors
 
 export interface WaterLog {
   id: string;
